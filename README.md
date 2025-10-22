@@ -1,28 +1,10 @@
-# 🎮 游戏项目说明文档
+# 战术射击游戏
 
-<!-- TOC -->
-- [1. 游戏机制](#1-游戏机制)
-  - [1.1. 核心玩法](#11-核心玩法)
-  - [1.2. 敌方机制](#12-敌方机制)
-- [2. 场景搭建](#2-场景搭建)
-  - [2.1. 场景结构](#21-场景结构)
-  - [2.2. 光照与氛围](#22-光照与氛围)
-- [3. 游戏交互制作](#3-游戏交互制作)
-  - [3.1. 战斗交互](#31-战斗交互)
-  - [3.2. 场景交互](#32-场景交互)
-- [4. 资源管理](#4-资源管理)
-  - [4.1. 概述](#41-概述)
-  - [4.2. 文件组织](#42-文件组织)
-- [5. 开发环境](#5-开发环境)
-- [6. 版本记录](#6-版本记录)
-<!-- /TOC -->
-
----
-
-## 1. 游戏机制
-
-### 1.1. 核心玩法
+## 游戏玩法
 游戏共有三关，主题分别为突袭推进、隐蔽渗透与协同作战。 第一关以突袭式推进为核心，采用固定路径卷轴推进结合弹幕射击玩法。玩家需操控坦克突破敌军防线与陷阱，护送步兵抵达指定区域。过程中需精准控制炮弹数量，合理设置补给与维修点，考验玩家的反应力与战略规划，避免盲目突进。 第二关以隐蔽与渗透为主，强调战术潜行。玩家需潜入敌占区，避开巡逻搜索，收集医疗物资和维修工具，用于维持部队与坦克的战斗状态。此关考验玩家的环境利用与隐蔽能力，强化生存与资源管理技巧。 第三关则转为协同与火力调度。玩家将驾驶修复后的坦克，与炮兵支援协同推进，对敌阵地展开正面攻势。需灵活标记目标、分配火力，在保持射击快感的同时体验战术指挥的成就感。三关节奏由快至稳，兼顾操作挑战与策略深度。 
+
+## 游戏展示
+
 
 ## 1.2. 敌方机制
 
@@ -196,21 +178,6 @@ private void OnTriggerEnter(Collider other)
 一旦敌人听到声音，游戏会立即判定玩家暴露并触发失败UI，其基本逻辑用以下代码实现。
 
 ```csharp
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-
-public class EnemyHearing : MonoBehaviour
-{
-    [Header("游戏失败UI")]
-    public GameObject gameOverUI;
-
-    [Header("是否只触发一次")]
-    public bool onlyTriggerOnce = true;
-
-    private bool hasTriggered = false;
-    // Start is called before the first frame update
     public void OnHearSound(object[] data)
     {
         if (hasTriggered && onlyTriggerOnce) return;
@@ -251,102 +218,89 @@ public class EnemyHearing : MonoBehaviour
 - 可被击杀并触发死亡动画。
 其基本逻辑用以下代码实现。
 
+##### 核心逻辑代码
 ```csharp
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public class EnemySoldierLogic : MonoBehaviour
+void Update()
 {
-    public Transform player;
-    public GameObject bulletPrefab;
-    public Transform firePoint;
-    public float fireInterval = 3f;
-    public float detectionRange = 15f;
+    if (isDead || player == null) return;
 
-    private float fireTimer = 0f;
-    private Animator animator;
-    private bool isDead = false;
-    // Start is called before the first frame update
-    void Start()
+    float distance = Vector3.Distance(transform.position, player.position);
+
+    if (distance <= detectionRange)
     {
-        animator = GetComponent<Animator>();
-    }
+        // 始终面向玩家
+        Vector3 lookDir = player.position - transform.position;
+        lookDir.y = 0;
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            Quaternion.LookRotation(lookDir),
+            Time.deltaTime * 5f
+        );
 
-    // Update is called once per frame
-    void Update()
-    {
-        if (isDead || player == null) return;
-
-        float distance = Vector3.Distance(transform.position, player.position);
-
-        if (distance <= detectionRange)
+        // 每隔 fireInterval 秒发射一发子弹
+        fireTimer += Time.deltaTime;
+        if (fireTimer >= fireInterval)
         {
-            // 1. 始终面向主角
-            Vector3 lookDir = player.position - transform.position;
-            lookDir.y = 0;  // 保持水平旋转
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(lookDir), Time.deltaTime * 5f);
-
-            // 2. 每隔 fireInterval 秒发射一发子弹
-            fireTimer += Time.deltaTime;
-            if (fireTimer >= fireInterval)
-            {
-                FireBullet();
-                fireTimer = 0f;
-            }
+            FireBullet();
+            fireTimer = 0f;
         }
     }
-
-    void FireBullet()
-    {
-        if (bulletPrefab != null && firePoint != null)
-        {
-            GameObject bullet = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
-        }
-    }
-
-    public void TakeDamage()
-    {
-        Die();
-    }
-
-    void Die()
-    {
-        isDead = true;
-        animator.SetBool("isDead", true);
-
-        Invoke("StartFall", 1.5f);
-
-        // 可选：停止移动、停止射击，销毁子弹发射等
-        Destroy(this.gameObject, 3f); // 3 秒后销毁敌人
-    }
-
-    void StartFall()
-    {
-        StartCoroutine(SlowFallToGround());
-    }
-
-    IEnumerator SlowFallToGround()
-    {
-        float duration = 1f;
-        float elapsed = 0f;
-        Vector3 startPos = transform.position;
-        Vector3 endPos = startPos;
-        endPos.y -= 0.8f;  // 你可以根据情况调大，例如 1.5f 或 2f
-
-        while (elapsed < duration)
-        {
-            transform.position = Vector3.Lerp(startPos, endPos, elapsed / duration);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        transform.position = endPos;
-    }
-
-
 }
+
 ```
+##### 攻击与开火逻辑
+士兵在检测到玩家后，定时发射子弹。
+```csharp
+void FireBullet()
+{
+    if (bulletPrefab != null && firePoint != null)
+    {
+        Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
+    }
+}
+
+```
+##### 受击与死亡逻辑
+士兵被击中后会播放死亡动画，随后缓慢倒地并销毁对象。
+```csharp
+public void TakeDamage()
+{
+    Die();
+}
+
+void Die()
+{
+    isDead = true;
+    animator.SetBool("isDead", true);
+    Invoke("StartFall", 1.5f);
+    Destroy(this.gameObject, 3f);
+}
+
+void StartFall()
+{
+    StartCoroutine(SlowFallToGround());
+}
+
+IEnumerator SlowFallToGround()
+{
+    float duration = 1f;
+    float elapsed = 0f;
+    Vector3 startPos = transform.position;
+    Vector3 endPos = startPos;
+    endPos.y -= 0.8f;
+
+    while (elapsed < duration)
+    {
+        transform.position = Vector3.Lerp(startPos, endPos, elapsed / duration);
+        elapsed += Time.deltaTime;
+        yield return null;
+    }
+
+    transform.position = endPos;
+}
+
+```
+
 #### FortLogic：固定堡垒逻辑
 其主要功能为：
 - 面向玩家的血条UI。  
