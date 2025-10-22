@@ -38,7 +38,7 @@
 炮弹、子弹、道具、障碍物、Boss 分别按独立时间间隔生成  
 Boss 在关卡后期出现并触发战斗阶段  
 
-#### 核心逻辑代码
+##### 核心逻辑代码
 ```csharp
 void Start()
 {
@@ -56,7 +56,7 @@ void Start()
 }
 ```
 
-#### 生成逻辑示例
+##### 生成逻辑示例
 炮弹生成（定点前方 + 音效）
 ```csharp
 void CreateCannon()
@@ -69,7 +69,7 @@ void CreateCannon()
 }
 ```
 
-子弹生成（两侧随机 + 瞄准玩家）
+##### 子弹生成（两侧随机 + 瞄准玩家）
 ```csharp
 void CreateBullet()
 {
@@ -82,7 +82,7 @@ void CreateBullet()
 }
 ```
 
-道具与障碍物生成
+##### 道具与障碍物生成
 ```csharp
 void CreateHealthItem()
 {
@@ -102,7 +102,7 @@ void CreateObstacles()
 }
 ```
 
-#### Boss登场阶段
+##### Boss登场阶段
 ```csharp
 void CreateBoss()
 {
@@ -120,79 +120,73 @@ BossLogic是第一关 Boss 战的核心控制脚本，负责实现以下功能�
 子弹发射：定时生成 Boss 子弹（间隔 1.5 秒）
 受击检测：当 Boss 被“炮弹”击中时执行受伤逻辑
 
+##### 核心逻辑代码
 ```csharp
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public class BossLogic : MonoBehaviour
+void Start()
 {
-    public Transform TankTurret;      // Boss 炮塔部分
-    public Transform player;          // 玩家目标
-    public GameObject BossBullet;     // Boss 子弹预制体
-    public Transform firePoint;       // 子弹发射点
-    public float FrontSpeed = 5;      // 前进速度
-    public float rotationSpeed = 5f;  // 炮塔旋转速度
+    // 每 1.5 秒发射一枚子弹
+    InvokeRepeating(nameof(BulletCreat), 0, 1.5f);
 
-    void Start()
+    // 获取玩家引用
+    player = GameObject.FindWithTag("Player").transform; 
+}
+```
+##### 行为逻辑示例
+Boss 持续前进（沿 Z 轴保持推进）
+```csharp
+void Update()
+{
+    // Boss 向前移动
+    transform.position = new Vector3(
+        transform.position.x,
+        transform.position.y,
+        transform.position.z + FrontSpeed * Time.deltaTime
+    );
+
+    // 炮塔自动朝向玩家
+    if (player != null)
     {
-        // 每 1.5 秒发射一枚子弹
-        InvokeRepeating(nameof(BulletCreat), 0, 1.5f);
+        Vector3 direction = player.position - TankTurret.position;
+        direction.y = 0f;
 
-        // 获取玩家引用
-        player = GameObject.FindWithTag("Player").transform; 
-    }
-
-    void Update()
-    {
-        // Boss 持续前进
-        transform.position = new Vector3(
-            transform.position.x,
-            transform.position.y,
-            transform.position.z + FrontSpeed * Time.deltaTime
-        );
-
-        // 炮塔自动朝向玩家
-        if (player != null)
+        if (direction != Vector3.zero)
         {
-            Vector3 direction = player.position - TankTurret.position;
-            direction.y = 0f;
-
-            if (direction != Vector3.zero)
-            {
-                Quaternion targetRotation = Quaternion.LookRotation(direction);
-                TankTurret.rotation = Quaternion.Slerp(
-                    TankTurret.rotation,
-                    targetRotation,
-                    rotationSpeed * Time.deltaTime
-                );
-            }
-        }
-    }
-
-    /// <summary>
-    /// 创建子弹（Boss 攻击逻辑）
-    /// </summary>
-    public void BulletCreat()
-    {
-        // 在发射点生成子弹
-        GameObject node = Instantiate(BossBullet, firePoint.position, firePoint.rotation);
-        node.transform.position = firePoint.position;
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        PlayerHealthLogic playHealth = this.gameObject.GetComponent<PlayerHealthLogic>();
-
-        // 当被“炮弹”击中时受伤
-        if (other.name.StartsWith("炮弹"))
-        {
-            Destroy(other.gameObject);
-            playHealth.TakeDamage(5);
-            return;
+            Quaternion targetRotation = Quaternion.LookRotation(direction);
+            TankTurret.rotation = Quaternion.Slerp(
+                TankTurret.rotation,
+                targetRotation,
+                rotationSpeed * Time.deltaTime
+            );
         }
     }
 }
+
+```
+##### Boss 子弹发射（定时攻击）
+```csharp
+public void BulletCreat()
+{
+    // 在发射点生成 Boss 子弹
+    GameObject node = Instantiate(BossBullet, firePoint.position, firePoint.rotation);
+    node.transform.position = firePoint.position;
+}
+
+```
+##### Boss 受击检测（被炮弹命中时受伤）
+```csharp
+private void OnTriggerEnter(Collider other)
+{
+    PlayerHealthLogic playHealth = this.gameObject.GetComponent<PlayerHealthLogic>();
+
+    // 当被“炮弹”击中时受伤
+    if (other.name.StartsWith("炮弹"))
+    {
+        Destroy(other.gameObject);
+        playHealth.TakeDamage(5);
+        return;
+    }
+}
+
 ```
 
 
