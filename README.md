@@ -39,6 +39,7 @@
 Boss 在关卡后期出现并触发战斗阶段  
 
 #### 核心逻辑代码
+```csharp
 void Start()
 {
     player = GameObject.FindWithTag("Player");
@@ -53,9 +54,11 @@ void Start()
     // Boss 在指定时间后出现
     Invoke(nameof(CreateBoss), BossInterval);
 }
+```
 
 #### 生成逻辑示例
 炮弹生成（定点前方 + 音效）
+```csharp
 void CreateCannon()
 {
     if (player == null || isBoss) return;
@@ -64,8 +67,10 @@ void CreateCannon()
     Instantiate(cannonPrefab, pos, Quaternion.Euler(-90, 0, 0));
     AudioSource.PlayClipAtPoint(cannonSound, Camera.main.transform.position);
 }
+```
 
 子弹生成（两侧随机 + 瞄准玩家）
+```csharp
 void CreateBullet()
 {
     if (player == null) return;
@@ -75,8 +80,10 @@ void CreateBullet()
     GameObject bullet = Instantiate(bulletPrefab, pos, Quaternion.identity);
     bullet.transform.LookAt(shootTarget.transform);
 }
+```
 
 道具与障碍物生成
+```csharp
 void CreateHealthItem()
 {
     Vector3 pos = player.transform.position + new Vector3(Random.Range(-11.5f, 12.5f), 1.4f, 40);
@@ -93,14 +100,17 @@ void CreateObstacles()
     Vector3 pos = player.transform.position + new Vector3(Random.Range(-9, 8), yPos, Random.Range(35, 55));
     Instantiate(prefab, pos, Quaternion.identity);
 }
+```
 
 #### Boss登场阶段
+```csharp
 void CreateBoss()
 {
     Vector3 pos = player.transform.position + new Vector3(0, 0, 27);
     Instantiate(Boss, pos, Quaternion.Euler(0, -180, 0));
     isBoss = true;
 }
+```
 
 ####  BossLogic：Boss 行为机制
 
