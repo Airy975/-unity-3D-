@@ -144,6 +144,90 @@ public class CreatorLogic : MonoBehaviour
 }
 ```
 
+`BossLogic` 是 Boss 战的核心控制脚本，负责实现以下功能：
+
+- 前进逻辑：Boss 持续沿 Z 轴与玩家保持距离。  
+- 炮塔追踪：炮塔自动旋转，始终朝向玩家。  
+- 子弹发射：定时生成 Boss 子弹（间隔 1.5 秒）。  
+- 受击检测：当 Boss 被“炮弹”击中时执行受伤逻辑。  
+
+通过该机制，Boss 在场景中具备持续威胁性和动态战斗表现。
+
+```csharp
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class BossLogic : MonoBehaviour
+{
+    public Transform TankTurret;      // Boss 炮塔部分
+    public Transform player;          // 玩家目标
+    public GameObject BossBullet;     // Boss 子弹预制体
+    public Transform firePoint;       // 子弹发射点
+    public float FrontSpeed = 5;      // 前进速度
+    public float rotationSpeed = 5f;  // 炮塔旋转速度
+
+    void Start()
+    {
+        // 每 1.5 秒发射一枚子弹
+        InvokeRepeating(nameof(BulletCreat), 0, 1.5f);
+
+        // 获取玩家引用
+        player = GameObject.FindWithTag("Player").transform; 
+    }
+
+    void Update()
+    {
+        // Boss 持续前进
+        transform.position = new Vector3(
+            transform.position.x,
+            transform.position.y,
+            transform.position.z + FrontSpeed * Time.deltaTime
+        );
+
+        // 炮塔自动朝向玩家
+        if (player != null)
+        {
+            Vector3 direction = player.position - TankTurret.position;
+            direction.y = 0f;
+
+            if (direction != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(direction);
+                TankTurret.rotation = Quaternion.Slerp(
+                    TankTurret.rotation,
+                    targetRotation,
+                    rotationSpeed * Time.deltaTime
+                );
+            }
+        }
+    }
+
+    /// <summary>
+    /// 创建子弹（Boss 攻击逻辑）
+    /// </summary>
+    public void BulletCreat()
+    {
+        // 在发射点生成子弹
+        GameObject node = Instantiate(BossBullet, firePoint.position, firePoint.rotation);
+        node.transform.position = firePoint.position;
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        PlayerHealthLogic playHealth = this.gameObject.GetComponent<PlayerHealthLogic>();
+
+        // 当被“炮弹”击中时受伤
+        if (other.name.StartsWith("炮弹"))
+        {
+            Destroy(other.gameObject);
+            playHealth.TakeDamage(5);
+            return;
+        }
+    }
+}
+```
+
 ---
 
 ## 2. 场景搭建
