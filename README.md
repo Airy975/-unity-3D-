@@ -38,123 +38,69 @@
 炮弹、子弹、道具、障碍物、Boss 分别按独立时间间隔生成  
 Boss 在关卡后期出现并触发战斗阶段  
 
-实现代码：
-```csharp
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public class CreatorLogic : MonoBehaviour
+#### 核心逻辑代码
+void Start()
 {
-    [Header("各类型刷新时间")]
-    public float cannonInterval = 1.5f;       // 炮弹刷新间隔
-    public float bulletInterval = 0.8f;        // 子弹刷新间隔
-    public float healthItemInterval = 7f;      // 血包/弹药刷新间隔
-    public float ObstaclesInterval = 3f;       // 障碍物刷新间隔
-    public float BossInterval = 60f;            // Boss刷新时间
+    player = GameObject.FindWithTag("Player");
+    shootTarget = GameObject.FindWithTag("shoot");
 
-    [Header("生成对象")]
-    public GameObject cannonPrefab;            // 炮弹Prefab
-    public AudioClip cannonSound;            // 炮弹音效
-    public GameObject bulletPrefab;            // 子弹Prefab
-    public AudioClip bulletSound;            // 子弹音效
-    public GameObject healthPrefab;            // 血量道具Prefab
-    public GameObject ammoHealthPrefab;        // 弹药道具Prefab
-    public GameObject Obstacles1;              // 障碍物1
-    public GameObject Obstacles2;              // 障碍物2
-    public GameObject Boss;                    // Boss
-    private bool isBoss = false;                // 是否已经生成Boss
-    private GameObject player;
-    private GameObject shootTarget;
+    // 各类型对象按独立时间间隔生成
+    InvokeRepeating(nameof(CreateCannon), 3f, cannonInterval);
+    InvokeRepeating(nameof(CreateBullet), 1f, bulletInterval);
+    InvokeRepeating(nameof(CreateHealthItem), 5f, healthItemInterval);
+    InvokeRepeating(nameof(CreateObstacles), 0, ObstaclesInterval);
 
-    void Start()
-    {
-        player = GameObject.FindWithTag("Player");
-        shootTarget = GameObject.FindWithTag("shoot");
-
-
-        // 三种不同类型分别开始自己的刷新
-        InvokeRepeating(nameof(CreateCannon), 3f, cannonInterval);
-        InvokeRepeating(nameof(CreateBullet), 1f, bulletInterval);
-        InvokeRepeating(nameof(CreateHealthItem), 5f, healthItemInterval);
-        InvokeRepeating(nameof(CreateObstacles), 0, ObstaclesInterval);
-        Invoke(nameof(CreateBoss), BossInterval);
-    }
-
-    void CreateCannon()
-    {
-        if (player == null) return;
-
-        if(isBoss == true) return;
-
-        // 在玩家位置的前方随机生成一个炮弹
-        Vector3 spawnPosition = player.transform.position + new Vector3(Random.Range(-11.5f, 12.5f), 1, 40);
-        Quaternion spawnRotation = Quaternion.Euler(-90, 0, 0);
-
-        Instantiate(cannonPrefab, spawnPosition, spawnRotation);
-
-        AudioSource.PlayClipAtPoint(cannonSound, Camera.main.transform.position); // 在摄像机位置播放音效
-    }
-
-    void CreateBullet()
-    {
-        if (player == null) return;
-
-        float randomX = Random.Range(0, 2) == 0 ? Random.Range(-50f, -20f) : Random.Range(20f, 50f);
-        float randomZ = Random.Range(10f, 30f);
-        Vector3 spawnPosition = player.transform.position + new Vector3(randomX, 1, randomZ);
-
-        GameObject bullet = Instantiate(bulletPrefab, spawnPosition, Quaternion.identity);
-        if (shootTarget != null)
-        {
-            bullet.transform.LookAt(shootTarget.transform);
-        }
-
-        AudioSource.PlayClipAtPoint(bulletSound, Camera.main.transform.position);
-    }
-
-    void CreateHealthItem()
-    {
-        if (player == null) return;
-
-        Vector3 spawnPosition = player.transform.position + new Vector3(Random.Range(-11.5f, 12.5f), 1.4f, 40);
-        int sel = Random.Range(0, 2);
-        GameObject selectedPrefab = (sel == 0) ? healthPrefab : ammoHealthPrefab;
-
-        Instantiate(selectedPrefab, spawnPosition, Quaternion.identity);
-    }
-
-    void CreateObstacles()
-    {
-        if (player == null) return;
-
-        if(isBoss == true) return;
-
-        int sel = Random.Range(0, 2);
-        GameObject selectedPrefab = (sel == 0) ? Obstacles1 : Obstacles2;
-
-        float yPos = (sel == 0) ? 3.86f : -0.82f; // 根据选择的障碍物设置不同的y值
-
-        float randomZ = Random.Range(35, 55);
-
-        Vector3 spawnPosition = player.transform.position + new Vector3(Random.Range(-9, 8), yPos, randomZ);
-
-        Instantiate(selectedPrefab, spawnPosition, Quaternion.identity);
-    }
-
-    void CreateBoss()
-    {
-        if (player == null) return;
-
-        Vector3 spawnPosition = player.transform.position + new Vector3(0, 0, 27);
-        Quaternion spawnRotation = Quaternion.Euler(0, -180, 0);
-
-        Instantiate(Boss, spawnPosition, spawnRotation);
-
-        isBoss = true;
-    }
+    // Boss 在指定时间后出现
+    Invoke(nameof(CreateBoss), BossInterval);
 }
-```
+
+#### 生成逻辑示例
+炮弹生成（定点前方 + 音效）
+void CreateCannon()
+{
+    if (player == null || isBoss) return;
+
+    Vector3 pos = player.transform.position + new Vector3(Random.Range(-11.5f, 12.5f), 1, 40);
+    Instantiate(cannonPrefab, pos, Quaternion.Euler(-90, 0, 0));
+    AudioSource.PlayClipAtPoint(cannonSound, Camera.main.transform.position);
+}
+
+子弹生成（两侧随机 + 瞄准玩家）
+void CreateBullet()
+{
+    if (player == null) return;
+
+    float randomX = Random.Range(0, 2) == 0 ? Random.Range(-50f, -20f) : Random.Range(20f, 50f);
+    Vector3 pos = player.transform.position + new Vector3(randomX, 1, Random.Range(10f, 30f));
+    GameObject bullet = Instantiate(bulletPrefab, pos, Quaternion.identity);
+    bullet.transform.LookAt(shootTarget.transform);
+}
+
+道具与障碍物生成
+void CreateHealthItem()
+{
+    Vector3 pos = player.transform.position + new Vector3(Random.Range(-11.5f, 12.5f), 1.4f, 40);
+    GameObject prefab = Random.Range(0, 2) == 0 ? healthPrefab : ammoHealthPrefab;
+    Instantiate(prefab, pos, Quaternion.identity);
+}
+
+void CreateObstacles()
+{
+    if (isBoss) return;
+
+    GameObject prefab = Random.Range(0, 2) == 0 ? Obstacles1 : Obstacles2;
+    float yPos = prefab == Obstacles1 ? 3.86f : -0.82f;
+    Vector3 pos = player.transform.position + new Vector3(Random.Range(-9, 8), yPos, Random.Range(35, 55));
+    Instantiate(prefab, pos, Quaternion.identity);
+}
+
+#### Boss登场阶段
+void CreateBoss()
+{
+    Vector3 pos = player.transform.position + new Vector3(0, 0, 27);
+    Instantiate(Boss, pos, Quaternion.Euler(0, -180, 0));
+    isBoss = true;
+}
 
 ####  BossLogic：Boss 行为机制
 
