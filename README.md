@@ -31,42 +31,42 @@
 依据游戏的玩法以及剧情设定，同时为了呈现出真实的战争氛围，这款游戏总共精心设计了三个主要场景，分别是热带丛林战场，也就是第一关的场景，以及破败的越南村庄，这是第二关和第三关的场景。
 游戏的第一关是固定路径卷轴推进结合弹幕射击玩法，这关的场景运用地图拼接的方式来呈现。本关地图的生成代码采用了Unity的Instantiate方法，借助周期性地图拼接实现动态生成场景，利用预制体Prefab进行设计，并且按照固定的Z轴间距依次排列，营造出不断向前推进的视觉感受，其基本逻辑用以下代码实现。
 
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+        using System.Collections;
+        using System.Collections.Generic;
+        using UnityEngine;
 
-public class PlandLogic : MonoBehaviour
-{
-    public GameObject environmentPrefab;
+        public class PlandLogic : MonoBehaviour
+        {
+            public GameObject environmentPrefab;
 
-    float interval = 5;
-    // Start is called before the first frame update
+          float interval = 5;
+          // Start is called before the first frame update
 
-    float times = 0;
+          float times = 0;
 
-    void Start()
-    {
-        InvokeRepeating("CreatePlane", 0, interval);
+          void Start()
+          {
+              InvokeRepeating("CreatePlane", 0, interval);
 
-    }
+          }
 
-    // Update is called once per frame
-    void Update()
-    {
+          // Update is called once per frame
+          void Update()
+          {
         
-    }
+          }
 
-    void CreatePlane()
-    {
+          void CreatePlane()
+          {
 
-        times = times + 1;
+              times = times + 1;
 
-        GameObject node = Instantiate(environmentPrefab, Vector3.zero, Quaternion.identity);
+              GameObject node = Instantiate(environmentPrefab, Vector3.zero, Quaternion.identity);
 
-        node.transform.position = new Vector3(0, 0, times * 60.35f);
-    }
+             node.transform.position = new Vector3(0, 0, times * 60.35f);
+          }
 
-}
+        }
 
 
 ---
