@@ -5,7 +5,17 @@
 
 ## 游戏展示
 ![](https://github.com/Airy975/-unity-3D-/blob/main/image/1.png)
-
+![](https://github.com/Airy975/-unity-3D-/blob/main/image/2.png)
+![](https://github.com/Airy975/-unity-3D-/blob/main/image/3.png)
+![](https://github.com/Airy975/-unity-3D-/blob/main/image/4.png)
+![](https://github.com/Airy975/-unity-3D-/blob/main/image/5.png)
+![](https://github.com/Airy975/-unity-3D-/blob/main/image/6.png)
+![](https://github.com/Airy975/-unity-3D-/blob/main/image/7.png)
+![](https://github.com/Airy975/-unity-3D-/blob/main/image/8.png)
+![](https://github.com/Airy975/-unity-3D-/blob/main/image/9.png)
+![](https://github.com/Airy975/-unity-3D-/blob/main/image/10.png)
+![](https://github.com/Airy975/-unity-3D-/blob/main/image/11.png)
+![](https://github.com/Airy975/-unity-3D-/blob/main/image/12.png)
 
 ## 1.2. 敌方机制
 
